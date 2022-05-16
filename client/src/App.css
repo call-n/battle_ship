@@ -2,17 +2,32 @@ h1, h2, h3, h4, h5, h6 {
 	margin-bottom: 0.75em;
 }
 
-hr {
-	border-top-width: 2px;
-	margin-top: 1.5rem;
-	margin-bottom: 1.5rem;
-	width: 100%;
+html,
+body,
+#root,
+#App {
+	height: 100vh;
 }
 
-#app {
+.lobby {
 	display: flex;
-	flex-direction: column;
-	align-items: center;
+	height: calc(100vh - 56px);
+}
+
+.lobby {
 	justify-content: center;
-	min-height: 100vh;
+	align-items: center;
+}
+
+.gamers{
+	display: flex;
+}
+
+.cols4gameboard{
+	height: 40px !important;
+	border: 1px solid #fff;
+}
+
+.game-board-holder{
+	margin: 5px;
 }
