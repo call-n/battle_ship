@@ -1,5 +1,5 @@
 {
-  "name": "battle_ship",
+  "name": "12-clock-client",
   "version": "0.1.0",
   "private": true,
   "main": "server.js",

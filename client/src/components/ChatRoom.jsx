@@ -1,16 +1,17 @@
-import { useEffect, useState, useRef } from 'react'
-import Button from 'react-bootstrap/Button'
-import Form from 'react-bootstrap/Form'
-import InputGroup from 'react-bootstrap/InputGroup'
-import ListGroup from 'react-bootstrap/ListGroup'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useGameContext } from '../contexts/GameContextProvider'
+import {useEffect, useState, useRef} from 'react'
+import SendIcon from '@mui/icons-material/Send';
+import {useNavigate, useParams} from 'react-router-dom'
+import {useGameContext} from '../contexts/GameContextProvider'
+import {Box, Button} from "@mui/material";
+import MessageIcon from '@mui/icons-material/Message';
+import CustomTextField from "../pages/lobby/CustomTextField";
+import CustomTextField2 from "../pages/lobby/CustomTextField2";
 
 const ChatRoom = () => {
 	const [message, setMessage] = useState('')
 	const [messages, setMessages] = useState([])
-	const { gameUsername, socket } = useGameContext()
-	const { room_id } = useParams()
+	const {gameUsername, socket} = useGameContext()
+	const {room_id} = useParams()
 	const navigate = useNavigate()
 	const messageRef = useRef()
 
@@ -18,15 +19,14 @@ const ChatRoom = () => {
 		console.log("Received a new chat message", msg)
 
 		// add message to chat
-		setMessages(prevMessages => [ ...prevMessages, msg ])
+		setMessages(prevMessages => [...prevMessages, msg])
 	}
 
 	const handleSubmit = async e => {
 		e.preventDefault()
 
-		if (!message.length) {
-			return
-		}
+		if (!message.length) return
+
 
 		// construct message object
 		const msg = {
@@ -43,7 +43,7 @@ const ChatRoom = () => {
 		setMessages(prevMessages =>
 			[
 				...prevMessages,
-				{ ...msg, self: true }
+				{...msg, self: true}
 			]
 		)
 
@@ -72,40 +72,43 @@ const ChatRoom = () => {
 
 	return (
 		<div id="chat-room">
-			<div id="chat">
-				<h2>#{room_id}</h2>
-
-				<div id="messages-wrapper">
-					<ListGroup id="messages">
-						{messages.map((message, index) => {
-							const ts = new Date(message.timestamp)
-							const time = ts.toLocaleTimeString()
-							return (
-								<ListGroup.Item key={index} className="message">
-									<span className="time">{time}</span>{' '}
-									<span className="user">{message.username}:</span>{' '}
-									<span className="content">{message.content}</span>
-								</ListGroup.Item>
-							)
-						}
-					)}
-					</ListGroup>
-				</div>
-
-				<Form onSubmit={handleSubmit} id="message-form">
-					<InputGroup>
-						<Form.Control
-							onChange={e => setMessage(e.target.value)}
-							placeholder="Say something nice..."
-							ref={messageRef}
-							required
-							type="text"
-							value={message}
-						/>
-						<Button variant="success" type="submit" disabled={!message.length}>Send</Button>
-					</InputGroup>
-				</Form>
+			<div style={{display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center'}}>
+				<Box component="form" onSubmit={handleSubmit} sx={{display: 'flex', flexDirection: 'column'}}>
+					<div style={{display: 'flex', alignItems: 'flex-end', marginBottom: 10}}>
+						<MessageIcon sx={{color: '#1976d2', mr: 1, my: 0.5}}/>
+						<CustomTextField required
+						                 label={'Say something nice'}
+						                 variant="standard"
+						                 value={message}
+						                 ref={messageRef}
+						                 type="text"
+						                 onChange={e => setMessage(e.target.value)}/>
+					</div>
+					<Button style={{color: 'white',}} variant="contained" endIcon={<SendIcon style={{color: 'white'}}/>}
+					        type='submit' disabled={!message.length}>Send</Button>
+				</Box>
 			</div>
+			<Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+				{messages.map((message, index) => {
+						const ts = new Date(message.timestamp)
+						const time = ts.toLocaleTimeString()
+						return (
+							<CustomTextField2
+								sx={{minWidth: 400, margin: 2, color: 'white !important'}}
+
+								id="standard-error-helper-text"
+								label={message.username}
+								defaultValue={message.content}
+								helperText={time}
+								variant="standard"
+								InputProps={{readOnly: true,}}
+							/>
+						)
+					}
+				)}
+			</Box>
+
+
 		</div>
 	)
 }
