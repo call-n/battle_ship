@@ -1,13 +1,22 @@
-import socketio from 'socket.io-client'
+import { Routes, Route } from 'react-router-dom'
+import Navigation from './components/Navigation'
+import Lobby from './pages/Lobby'
+import BattleRoom from './pages/BattleRoom'
+import NotFound from './pages/NotFound'
 import './App.css'
 
 const App = () => {
-	const socket = socketio.connect(process.env.REACT_APP_SOCKET_URL)
 
 	return (
-		<>
-			lol
-		</>
+		<div id="App">
+			<Navigation />
+
+			<Routes>
+				<Route path="/" element={<Lobby />} />
+				<Route path="/rooms/:room_id" element={<BattleRoom />} />
+				<Route path="*" element={<NotFound />} />
+			</Routes>
+		</div>
 	)
 }
 
