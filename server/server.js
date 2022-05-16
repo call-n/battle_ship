@@ -28,13 +28,6 @@ const io = new socketio.Server(server, {
 });
 
 /**
- * Set up Socket.IO Admin
- */
-instrument(io, {
-	auth: false,
-});
-
-/**
  * Handle incoming connections
  */
 io.on('connection', socket => {
