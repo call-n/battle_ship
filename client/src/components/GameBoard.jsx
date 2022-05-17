@@ -1,6 +1,5 @@
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import {Button} from "@mui/material";
-
 
 
 // Different solution
@@ -17,6 +16,11 @@ import {Button} from "@mui/material";
         [1,2,3,4,5,6,7,8,9,10],
         [1,2,3,4,5,6,7,8,9,10],
     ]
+
+
+	const checkButton = (event) => {
+		const target = event.target;
+	}
 
     // this is for the friendly board, this should not have anything to interact with
     // only updates when fired on by enemy
@@ -65,68 +69,84 @@ import {Button} from "@mui/material";
 }*/
 
 // Battlefield
-const BattlefieldBox = ({text, board}) => {
-    const [hit, setHit] = useState(false);
-    const [colored, setColored] = useState('#1a202f')
+const BattlefieldBox = ({text, board, coordinate}) => {
+	const [hit, setHit] = useState(false);
+	const [colored, setColored] = useState('#1a202f');
+	const [ships, setShips] = useState([coordinate])
+
+	const SHIP_DATA = {
+		fourdeck: ['1D', ['4D', '5D']],
+		tripledeck: [2, 3],
+		doubledeck: [3, 2],
+		singledeck: [4, 1]
+	};
 
 
-    const checkButton = (event) => {
-        const target = event.target;
-        setHit(true);
-        (target.id === '5D') ? setColored('#5dd219') : setColored('#ff5454');
-    }
 
-    if (board === 'friendly') {
-        return (
-            <Button style={{
-                    background: colored,
-                    borderRadius: 0,
-                    color: '#1a202f',
-                    boxShadow: '0 0 3px #1976d2',
-                    maxWidth: '40px', maxHeight: '40px', minWidth: '40px', minHeight: '40px'
-                }}
-                disabled={true}>
-                {text}
-            </Button>
-        )
-    }
+	const checkButton = (event) => {
+		const target = event.target;
+		setHit(true);
 
-    return (
-        <Button
-            id={text}
-            data-x={text}
-            disabled={hit}
-            style={{
-                background: colored,
-                borderRadius: 0,
-                boxShadow: '0 0 3px #1976d2',
-                maxWidth: '40px', maxHeight: '40px', minWidth: '40px', minHeight: '40px'
-            }}
-            onClick={(e) => {checkButton(e)}}>
-            {hit ? null : text}
-        </Button>
-    )
+	}
+
+
+	if (board === 'friendly') {
+		return (
+			<Button
+				coordinate={coordinate }
+				style={{
+					color: (coordinate) ? '#1976d2' : null,
+					background: colored,
+					borderRadius: 0,
+					boxShadow: '0 0 3px #1976d2',
+					maxWidth: '40px', maxHeight: '40px', minWidth: '40px', minHeight: '40px'
+				}}
+				disabled={false}
+			>
+				{text}
+			</Button>
+		)
+	}
+
+	return (
+		<Button
+			id={coordinate}
+			disabled={hit}
+			style={{
+				background: colored,
+				borderRadius: 0,
+				boxShadow: '0 0 3px #1976d2',
+				maxWidth: '40px', maxHeight: '40px', minWidth: '40px', minHeight: '40px'
+			}}
+			onClick={(e) => {
+				checkButton(e)
+			}}>
+			{hit ? null : text}
+		</Button>
+	)
 };
 
 
-// Render Battlefield Grid
+// Render Battlefield Grid ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
 const GameBoard = ({board}) => {
-    const horizontal = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-    const vertical = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    return (
-        <div style={{display: "flex", alignItems: 'center', flexDirection: 'column'}}>
-            {vertical.map(letter => (
-                <div key={letter}>
-                    {
-                        horizontal.map(number => <BattlefieldBox
-                            board={board}
-                            key={letter + number}
-                            text={letter + number}/>)
-                    }
-                </div>
-            ))}
-        </div>
-    )
+	const horizontal = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+	const vertical = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+	return (
+		<div style={{display: "flex", alignItems: 'center', flexDirection: 'column'}}>
+			{vertical.map(letter => (
+				<div key={letter}>
+					{
+						horizontal.map(number => <BattlefieldBox
+							board={board}
+							coordinate={letter + number}
+							key={letter + number}
+							text={letter + number}/>)
+					}
+				</div>
+			))}
+		</div>
+	)
 
 }
 

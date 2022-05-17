@@ -32,7 +32,6 @@ const Lobby = () => {
 				setRoomlist(rooms)
 			})
 		})
-
 		return () => {
 			console.log("Running cleanup")
 
