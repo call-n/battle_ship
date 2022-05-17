@@ -74,13 +74,6 @@ const BattlefieldBox = ({text, board, coordinate}) => {
 	const [colored, setColored] = useState('#1a202f');
 	const [ships, setShips] = useState([coordinate])
 
-	const SHIP_DATA = {
-		fourdeck: ['1D', ['4D', '5D']],
-		tripledeck: [2, 3],
-		doubledeck: [3, 2],
-		singledeck: [4, 1]
-	};
-
 
 
 	const checkButton = (event) => {
