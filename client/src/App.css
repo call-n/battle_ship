@@ -31,3 +31,15 @@ body,
 .game-board-holder{
 	margin: 5px;
 }
+
+.targetHit {
+	background-color: green;
+}
+
+.targetMiss {
+	background-color: red !important;
+}
+
+.friendlyBoat {
+	background-color: lightskyblue;
+}
