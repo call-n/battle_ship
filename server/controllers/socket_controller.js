@@ -23,6 +23,8 @@ const rooms = [
 	},
 ];
 
+const room_boards = []
+
 /**
  * Get room by ID
  *
@@ -163,6 +165,61 @@ const handleGetRoomList = function(callback) {
 }
 
 /**
+ * Handles the start of game
+ * 
+ */
+const handleGameStart = function(room_id) {
+
+	const room = getRoomById(room_id);
+
+	if (Object.keys(room.users).length !== 2) {
+		return;
+	}
+
+	// return player who starts
+	io.to(room_id).emit('game:starting', this.id);
+}
+
+const handleTurns = function(cords, room_id) {
+
+	const payload = {
+		cords: cords, 
+		player: this.id
+	}
+	// tells us the cords and who shoot
+	io.to(room_id).emit('game:turnresult', payload);
+}
+
+const handleGameBoard = function(cords, room_id, username) {
+
+	if ( !room_boards.find(room => room.id === room_id) ) {
+		room_boards.push({
+			id: room_id,
+			users: [
+				{
+					id: this.id,
+					name: username,
+					takenCords: cords
+				}
+			]
+		})
+		return
+	}
+
+	const room = room_boards.find(room => room.id === room_id)
+
+	room.users.push({
+		id: this.id,
+		name: username,
+		takenCords: cords
+	})
+
+	console.log(room.users)
+
+	io.to(room_id).emit('game:boardsfinito', room);
+}
+
+/**
  * Export controller and attach handlers to events
  *
  */
@@ -186,4 +243,13 @@ module.exports = function(socket, _io) {
 
 	// handle user emitting a new message
 	socket.on('chat:message', handleChatMessage);
+
+	// handle the start of game
+	socket.on('game:start', handleGameStart)
+
+	// handle turns
+	socket.on('game:nextturn', handleTurns)
+
+	// handle the board of the game
+	socket.on('game:board', handleGameBoard)
 }
