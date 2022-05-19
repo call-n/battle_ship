@@ -144,11 +144,14 @@ function GameBoard({ turn }) {
                 // check who sent the shoot
                 return
             }
+			console.log(payload.player)
             setAlertTextGaming('bruh, its ur turn')
 
             const targetHitByEnemy = document.querySelector(`[data-y-friendly="${payload.cords.y}"] [data-x-friendly="${payload.cords.x}"]`)
 
-            if( payload.cords.x === 5 && payload.cords.y === 5) {
+			console.log(targetHitByEnemy.payload)
+
+            if( friendlyBoard.find(boat => boat.y === payload.cords.y && boat.x === payload.cords.x)) {
                 setAlertTextGaming('You got hit... lol')
                 targetHitByEnemy.classList.add('targetHit')
                 setYourTurn(true)
