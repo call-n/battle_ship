@@ -6,20 +6,25 @@ import Col from 'react-bootstrap/Col'
 import Alert from 'react-bootstrap/Alert'
 import Button from 'react-bootstrap/Button'
 import Container from 'react-bootstrap/Container'
+import FriendlyCords from './FriendlyCords'
+import EnemyCords from './EnemyCords'
 
 function GameBoard({turn}) {
-	const {gameUsername, socket} = useGameContext();
-	const [yourTurn, setYourTurn] = useState(turn);
-	const [selectedBoats, setSelectedBoats] = useState(false);
-	const [choosingCords, setChoosingCords] = useState(false);
-	const [chosenBoat, setChosenBoat] = useState([]);
-	const [alertText, setAlertText] = useState('Choose which ship you want to place');
-	const [alertTextGaming, setAlertTextGaming] = useState('Wating for other player');
-	const [enemyBoard, setEnemyBoard] = useState(false);
-	const [friendlyBoard, setFriendlyBoard] = useState(false);
-	const [direction, setDirection] = useState(false);
-	const {room_id} = useParams();
-	const gameboard = [
+	const {gameUsername, socket} = useGameContext()
+	const [yourTurn, setYourTurn] = useState(turn)
+	const [selectedBoats, setSelectedBoats] = useState(false)
+	const [choosingCords, setChoosingCords] = useState(false)
+	const [chosenBoat, setChosenBoat] = useState([])
+	const [alertText, setAlertText] = useState('Choose which ship you want to place')
+	const [alertTextGaming, setAlertTextGaming] = useState('Wating for other player')
+	const [alertGameStatus, setAlertGameStatus] = useState('lol')
+	const [enemyBoard, setEnemyBoard] = useState([])
+	const [friendlyBoard, setFriendlyBoard] = useState([])
+	const [direction, setDirection] = useState(false)
+	const [takenCords, setTakenCords] = useState([])
+	const [shotCords, setShotCords] = useState([])
+	const {room_id} = useParams()
+    const gameboard = [
 		[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
 		[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
 		[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -52,23 +57,11 @@ function GameBoard({turn}) {
 			size: 4,
 			placed: false
 		}
-	]);
-	const [takenCords, setTakenCords] = useState([]);
-
-	useEffect(() => {
-		if (takenCords.length === 11) {
-			setAlertText(`All your boats are set! Waiting for other player...`)
-			socket.emit('game:board', takenCords, room_id, gameUsername)
-		}
-	}, [takenCords]);
+	])
 
 
-	const onStartChooseBoatLoc = (y, x, target) => {
-		if (target.classList.contains('friendlyBoat')) {
-			setAlertText(`You cant choose the same cords again!`);
-			return
-		}
-
+	const onStartChooseBoatLoc = (y, x) => {
+		
 		if (!direction && x > 7 && chosenBoat.size === 4) {
 			setAlertText(`Change to Vertical or select new place`);
 			return;
@@ -95,12 +88,9 @@ function GameBoard({turn}) {
 			return;
 		}
 
-		const colorBoatByCor = (corY, corX) => {
-			const friendlyBoat = document.querySelector(`[data-y-friendly="${corY}"] [data-x-friendly="${corX}"]`);
-			setTakenCords(prevState => [...prevState, {y: corY, x: corX}])
-			friendlyBoat.classList.add('friendlyBoat');
-		}
-
+		const colorBoatByCor = (y, x) => {
+			setTakenCords(prevState => [...prevState, {y: y, x: x, hit: false}])
+        }
 
 		const renderBoat = () => {
 			setChoosingCords(false);
@@ -116,11 +106,7 @@ function GameBoard({turn}) {
 			}
 		};
 
-
 		renderBoat();
-
-
-
 	}
 
 	const handleBoatChoice = (boat) => {
@@ -135,35 +121,73 @@ function GameBoard({turn}) {
 	}
 
 	const handleShoot = (y, x) => {
-		if (!yourTurn) {
-			return
-		}
+
+        let hit = false;
 		const cords = {y: y, x: x}
-		// find the element hit by player with data selectors
-		const targetHit = document.querySelector(`[data-y="${y}"] [data-x="${x}"]`)
 
-		console.log(enemyBoard);
-		console.log(enemyBoard[0].y, y)
-		console.log(enemyBoard.find(boat => boat.y === y && boat.x === x));
+        console.log(enemyBoard.find(boat => boat.y === y && boat.x === x), y, x)
 
-		if (enemyBoard.find(boat => boat.y === y && boat.x === x)) {
-			setAlertTextGaming('You hit a ship!')
-			targetHit.classList.add('targetHit')
+        // check if the cords are in the enemy board
+		if (enemyBoard.find(boat => boat.y === cords.y && boat.x === cords.x)) {
+			setAlertGameStatus('You hit a ship!')
+            hit = true
 		} else {
-			setAlertTextGaming('You missed, lol')
-			targetHit.classList.add('targetMiss')
-
+			setAlertGameStatus('You missed, lol')
 		}
+
+		setShotCords(prevState => [...prevState, {y: y, x: x, hit: hit}])
 		setYourTurn(false)
 		nextTurn(cords)
-		setAlertTextGaming('bruh, waiting for other P')
 	}
 
-	useEffect(() => {
+    // if this is added in the other useEffect it becomes a ∞loop
+    useEffect(() => {
+        // if all the boats and cords have been placed and 
+        // if the friendly board has returned from server
+        if (takenCords.length === 11 && friendlyBoard.length === 0) {
+            setAlertText(`All your boats are set! Waiting for other player...`)
+            socket.emit('game:board', takenCords, room_id, gameUsername)
+        }
+
+    }, [socket, takenCords, room_id, gameUsername, friendlyBoard])
+
+    // useEffect for handling turn result from server
+    useEffect(() => {
+        socket.on('game:turnresult', (payload) => {
+			if (payload.player === socket.id) {
+				// check who sent the shoot
+				return
+			}
+			setAlertTextGaming('bruh, its ur turn')
+
+            const urCord = takenCords.find(boat => boat.y === payload.cords.y && boat.x === payload.cords.x)
+
+            if (urCord) {
+                urCord.hit = true
+                setAlertGameStatus('You got hit... lol')
+                setYourTurn(true)
+                return
+            }
+
+            setAlertGameStatus('He missed... lol')
+            setYourTurn(true)
+            // just to reuse the old array when rendering
+			setTakenCords(prevState => [...prevState, {
+                y: payload.cords.y, 
+                x: payload.cords.x , 
+                hit: false
+            }])
+		})
+    }, [socket, takenCords])
+
+    // The initital that runs first when you are dont with the board and checks if its your turn
+    useEffect(() => {
+        // Checks if server gave you the first shoot
 		if (yourTurn) {
 			setAlertTextGaming('bruh, its ur turn')
 		}
 
+        // listens for the server to respond with the final cords for both boards
 		socket.on('game:boardsfinito', room => {
 			room.users.map(user => {
 				if (user.id !== socket.id) {
@@ -173,91 +197,72 @@ function GameBoard({turn}) {
 					setFriendlyBoard(user.takenCords)
 				}
 			})
-
 			setSelectedBoats(true)
 		})
+	}, [socket, yourTurn])
 
-		socket.on('game:turnresult', (payload) => {
-			if (payload.player === socket.id) {
-				// check who sent the shoot
-				return
-			}
-			setAlertTextGaming('bruh, its ur turn')
-
-			const targetHitByEnemy = document.querySelector(`[data-y-friendly="${payload.cords.y}"] [data-x-friendly="${payload.cords.x}"]`)
-
-			if (payload.cords.x === 5 && payload.cords.y === 5) {
-				setAlertTextGaming('You got hit... lol')
-				targetHitByEnemy.classList.add('targetHit')
-				setYourTurn(true)
-				return
-			}
-
-			setAlertTextGaming('He missed... lol')
-			targetHitByEnemy.classList.add('targetMiss')
-			setYourTurn(true)
-		})
-
-		if (friendlyBoard) {
-			takenCords.forEach(cords => {
-				const friendlyBoatCords = document.querySelector(`[data-y-friendly="${cords.y}"] [data-x-friendly="${cords.x}"]`)
-				const enemyBoatCords = document.querySelector(`[data-y="${cords.y}"] [data-x="${cords.x}"]`)
-
-				console.log('mjau');
-				// Clean up for new board render
-				friendlyBoatCords.classList.add('friendlyBoat')
-				enemyBoatCords.classList.remove('friendlyBoat')
-			})
-
-		}
-
-	}, [socket, room_id, friendlyBoard, yourTurn, takenCords])
-
-	if (!selectedBoats) {
-		return (
-			<Row>
-				<Alert variant={'info'}>
-					{alertText}
-				</Alert>
-				<Container>
-					<Button
-						variant="info"
-						style={{marginRight: 10}}
-						onClick={() => setDirection(() => !direction)}>{(direction === false) ? 'Horizontal' : 'Vertical'}</Button>
-					{boatsToPlace.map(boat => (
-						<Button
-							key={boat.id}
-							variant="info"
-							disabled={choosingCords || boat.placed}
-							onClick={() => {
-								handleBoatChoice(boat)
-
-							}}
-						>
-							Boat size: {boat.size}
-						</Button>
-					))}
-				</Container>
+	return (
+		<Row>
+				
+                {!selectedBoats && 
+                    <Row>
+                        <Alert variant={'info'}>
+                            {alertText}
+                        </Alert>
+                        <Container>
+                            <Button
+                                variant="info"
+                                style={{marginRight: 10}}
+                                onClick={() => setDirection(() => !direction)}>{(direction === false) ? 'Horizontal' : 'Vertical'}</Button>
+                            {boatsToPlace.map(boat => (
+                                <Button
+                                    key={boat.id}
+                                    variant="info"
+                                    disabled={choosingCords || boat.placed}
+                                    onClick={() => {
+                                        handleBoatChoice(boat)
+                                    }}
+                                >
+                                    Boat size: {boat.size}
+                                </Button>
+                            ))}
+                        </Container>
+                    </Row>
+                }
+                {selectedBoats && 
+                    <Row>
+                        <Col>
+                            <Alert variant={'info'}>
+                                {alertTextGaming}
+                            </Alert>
+                        </Col>
+                        <Col>
+                            <Alert>
+                                {alertGameStatus}
+                            </Alert>
+                        </Col>
+                    </Row>
+                }
+				
 				<Col>
 					<div className="game-board-holder">
 						<h5>Yours</h5>
 						{gameboard.map((y, index) =>
-							<div key={index} className="row" data-y-friendly={index + 1}>{
-								y.map(x =>
-									<div
-										key={x}
-										className="col cols4gameboard"
-										data-x-friendly={x}
-										onClick={(event) => {
-											const target = event.target
-											if (!choosingCords) return
-											onStartChooseBoatLoc(index + 1, x, target)
-										}}
-									>
-										{x}
-									</div>)
-							}
-							</div>
+                            <Row key={index}>{
+                                y.map(x =>
+                                    <FriendlyCords
+                                        key={x}
+                                        x={x}
+                                        y={index + 1}
+                                        handleChoice={onStartChooseBoatLoc}
+                                        takenCords={takenCords}
+                                        choosingCords={choosingCords}
+                                        shotCords={shotCords}
+                                    >
+                                        {x}
+                                    </FriendlyCords>
+                                )}
+                            </Row>
 						)}
 					</div>
 				</Col>
@@ -265,70 +270,26 @@ function GameBoard({turn}) {
 					<div className="game-board-holder">
 						<h5>Enemy</h5>
 						{gameboard.map((y, index) =>
-							<div key={index} className="row">{
-								y.map(x =>
-									<div
-										key={x}
-										className="col cols4gameboard"
-									>
-										{x}
-									</div>)
-							}
-							</div>
+                            <Row key={index}>{
+                                y.map(x =>
+                                    <EnemyCords
+                                        key={x}
+                                        y={index + 1}
+                                        x={x}
+                                        enemyBoard={enemyBoard}
+                                        disabled={!selectedBoats ? true : false}
+                                        handleChoise={handleShoot}
+                                        yourTurn={yourTurn}
+                                    >
+                                        {x}
+                                    </EnemyCords>
+                                )}
+                            </Row>
 						)}
 					</div>
 				</Col>
 			</Row>
 		)
-	}
-
-	return (
-		<Row>
-			<Alert variant={'info'}>
-				{alertTextGaming}
-			</Alert>
-			<Col>
-				<div className="game-board-holder">
-					<h5>Yours</h5>
-					{gameboard.map((y, index) =>
-						<div key={index} className="row" data-y-friendly={index + 1}>{
-							y.map(x =>
-								<div
-									key={x}
-									className="col cols4gameboard"
-									data-x-friendly={x}
-								>
-									{x}
-								</div>)
-						}
-						</div>
-					)}
-				</div>
-			</Col>
-			<Col>
-				<div className="game-board-holder">
-					<h5>Enemy</h5>
-					{gameboard.map((y, index) =>
-						<div key={index} className="row" data-y={index + 1}>{
-							y.map(x =>
-								<div
-									key={x}
-									className="col cols4gameboard"
-									data-x={x}
-									onClick={() => {
-										handleShoot(index + 1, x)
-									}}
-								>
-									{x}
-								</div>)
-						}
-						</div>
-					)}
-				</div>
-			</Col>
-		</Row>
-
-	)
 }
 
 export default GameBoard
