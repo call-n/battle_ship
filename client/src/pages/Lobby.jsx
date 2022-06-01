@@ -1,95 +1,76 @@
-import { useState, useEffect } from 'react'
-import { useGameContext } from '../contexts/GameContextProvider'
-import ListGroup from 'react-bootstrap/ListGroup'
-import Badge from 'react-bootstrap/Badge'
-import Form from 'react-bootstrap/Form'
-import Alert from 'react-bootstrap/Alert'
-import { useNavigate } from 'react-router-dom'
-
-
+import {useEffect, useState} from 'react'
+import {useGameContext} from '../contexts/GameContextProvider'
+import {useNavigate} from 'react-router-dom'
+import {AccountCircle} from "@mui/icons-material";
+import {Box, Chip, Container, List, ListItem, ListItemButton, ListItemText, TextField} from "@mui/material";
+import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
+import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
 const Lobby = () => {
-    const [username, setUsername] = useState('')
-    const { setGameUsername, socket } = useGameContext()
-    const [roomlist, setRoomlist] = useState([])
-    const navigate = useNavigate()
+	const {setGameUsername, socket} = useGameContext();
+	const [roomList, setRoomList] = useState([]);
 
+	useEffect(() => {
+		console.log("Requesting room list from server...");
 
-    useEffect(() => {
-		console.log("Requesting room list from server...")
+		socket.emit('get-room-list', rooms => setRoomList(rooms));
 
-		socket.emit('get-room-list', rooms => {
-			setRoomlist(rooms)
-		})
+		// this is just to update the client for possible full rooms
+		socket.on('check4gamers', () => socket.emit('get-room-list', rooms => setRoomList(rooms)));
 
-        // this is just to update the client for possible full rooms
-        socket.on('check4gamers', () => {
-            socket.emit('get-room-list', rooms => {
-                setRoomlist(rooms)
-            })
-        })
-
-        return () => {
-			console.log("Running cleanup")
-
+		return () => {
+			console.log("Running cleanup");
 			// stop listening to events
-			socket.off('check4gamers')
-		}
-	}, [socket])
+			socket.off('check4gamers');
+		};
 
-	return (
-		<div className="lobby">
-            <div>
-                <h1>Lobby</h1>
-                <Form>
-                    <Form.Group className="mb-3" controlId="username">
-                        <Form.Label>Username</Form.Label>
-                        <Form.Control
-                            onChange={e => setUsername(e.target.value)}
-                            placeholder="Enter your username"
-                            required
-                            type="text"
-                            value={username}
-                        />
-                    </Form.Group>
-                </Form>
-                <Alert variant={'info'}>
-                    You need to enter a valid username to join a game!
-                </Alert>
-                <h3>Games</h3>
-                <div className="d-flex justify-content-between">
-                    <ListGroup className="w-100">
-                        {roomlist.map(room => 
-                            <ListGroup.Item 
-                                key={room.id} 
-                                action
-                                disabled={room.joinable === true && username.length > 1 ? false : true}
-                                onClick={() => {
-                                    setGameUsername(username)
-                                    navigate(`/rooms/${room.id}`)
-                                }}
-                                className="d-flex justify-content-between align-items-start"
-                                >
-                                    <div className="ms-2 me-auto">
-                                        <div className="fw-bold h5">{room.name}</div>
-                                        
-                                        {Object.values(room.users).length > 0 && 
-                                        <div className="fw-bold">Connected Players:</div>}
-                                        
-                                        {Object.values(room.users).map((user, index) =>
-                                            <div key={index}>{user}</div>
-                                        )}
-                                    </div>
-                                    <Badge bg="primary" pill>
-                                        {room.joinable === true ? 'Joinable' : 'Full'}
-                                    </Badge> 
-                            </ListGroup.Item>
-                        )}
-                    </ListGroup>
-                </div>
-            </div>
-		</div>
-	)
+	}, [socket]);
+
+	// RENDER HTML
+	return <RoomWindow roomList={roomList} setGameUsername={setGameUsername}/>
+}
+const RoomWindow = ({roomList, setGameUsername}) => {
+	// STATES
+	const [username, setUsername] = useState('');
+	// ROUTES
+	const navigate = useNavigate();
+
+	// RENDER HTML
+	return (<div className='lobby'>
+		<Container sx={{display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center'}}>
+			{/*INPUT*/}
+			<Box sx={{display: 'flex', alignItems: 'flex-end', marginBottom: 10}}>
+				<AccountCircle sx={{color: '#1976d2', mr: 1, my: 0.5}}/>
+				<TextField required
+				           inputProps={{style: {color: '#fff'}}}
+				           InputLabelProps={{style: {color: '#1976d2'}}}
+				           label={'Username'}
+				           variant="standard"
+				           value={username}
+				           onChange={({target}) => setUsername(target.value)}/>
+			</Box>
+
+			{/* LOBBY ROOMS */}
+			<Box>
+				<List sx={{width: '100%', minWidth: 320, bgcolor: 'rgba(26,32,47,0.6)'}}>
+					{roomList.map(({id, joinable, name, users}) => <ListItem
+						disablePadding
+						key={id}
+						disabled={!(joinable && username.length > 1)}
+						onClick={() => {
+							setGameUsername(username);
+							navigate(`/rooms/${id}`);
+						}}>
+						<ListItemButton children={<ListItemText
+							secondaryTypographyProps={{style: {color: '#1976d2'}}}
+							primary={name}
+							secondary={`${Object.values(users).join(' vs ')} `}/>}/>
+						<Chip sx={{height: 24, mr: 1}} label={joinable ? 'Joinable' : 'Full'} color="primary"  icon={joinable ? <VideogameAssetIcon/> : <VideogameAssetOffIcon/>}/>
+					</ListItem>)}
+				</List>
+			</Box>
+		</Container>
+	</div>)
 }
 
 export default Lobby

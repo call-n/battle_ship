@@ -1,0 +1,21 @@
+body {
+	overflow: hidden;
+}
+.lobby {
+	display: flex;
+	height: calc(100vh - 56px);
+	justify-content: center;
+	align-items: center;
+}
+
+.targetHit {
+	background-color: green !important;
+}
+
+.targetMiss {
+	background-color: red !important;
+}
+
+.friendlyBoat {
+	background-color: lightskyblue !important;
+}

@@ -31,7 +31,7 @@ var room_boards = []
  * @param {String} id ID of Room to get
  * @returns
  */
- const getRoomById = id => {
+const getRoomById = id => {
 	return rooms.find(room => room.id === id)
 }
 
@@ -49,7 +49,7 @@ const getRoomByUserId = id => {
  * Handle a user disconnecting
  *
  */
-const handleDisconnect = function() {
+const handleDisconnect = function () {
 	debug(`Client ${this.id} disconnected :(`);
 
 	// find the room that this socket is part of
@@ -75,7 +75,7 @@ const handleDisconnect = function() {
  * Handle a user joining a room
  *
  */
- const handleUserJoined = async function(username, room_id, callback) {
+const handleUserJoined = async function (username, room_id, callback) {
 	debug(`User ${username} with socket id ${this.id} wants to join room '${room_id}'`);
 
 	// join room
@@ -109,19 +109,17 @@ const handleDisconnect = function() {
  * Handle a user leaving a room
  *
  */
- const handleUserLeft = async function(username, room_id) {
+const handleUserLeft = async function (username, room_id) {
 	debug(`User ${username} with socket id ${this.id} left room '${room_id}'`);
 
 	// leave room
 	this.leave(room_id);
-
 	// remove socket from list of online users in this room
 	// a) find room object with `id` === `general`
 	const room = getRoomById(room_id);
 
 	// b) remove socket from room's `users` object
 	delete room.users[this.id];
-
 	// removes the game instance and clears boards
 	room_boards = room_boards.filter(board => board.id === room.name)
 
@@ -130,20 +128,21 @@ const handleDisconnect = function() {
 
 	// broadcast list of users to everyone in the room
 	io.to(room.id).emit('user:list', room.users);
+
 }
 
 let joinable;
-const handleGetRoomList = function(callback) {
+const handleGetRoomList = function (callback) {
 
 	// generate a list of rooms with only their id and name
 	const room_list = rooms.map(room => {
 
-		// the joinable parameter is used in the lobby so I know 
+		// the joinable parameter is used in the lobby so I know
 		// when a new user can join the room
-		Object.keys(room.users).length >= 2 
-		? joinable = false 
-		: joinable = true
-	
+		Object.keys(room.users).length >= 2
+			? joinable = false
+			: joinable = true
+
 		return {
 			id: room.id,
 			name: room.name,
@@ -160,7 +159,7 @@ const handleGetRoomList = function(callback) {
  * Handle a user sending a chat message to a room
  *
  */
- const handleChatMessage = async function(data) {
+const handleChatMessage = async function (data) {
 	debug('Someone said something: ', data);
 
 	const room = getRoomById(data.room);
@@ -171,9 +170,9 @@ const handleGetRoomList = function(callback) {
 
 /**
  * Handles the start of game
- * 
+ *
  */
-const handleGameStart = function(room_id) {
+const handleGameStart = function (room_id) {
 
 	// get room
 	const room = getRoomById(room_id);
@@ -189,13 +188,13 @@ const handleGameStart = function(room_id) {
 
 /**
  * Handles the turns, just like the message for the chat
- * 
+ *
  */
-const handleTurns = function(cords, room_id) {
+const handleTurns = function (cords, room_id) {
 
 	// what we want to give back to the client
 	const payload = {
-		cords: cords, 
+		cords: cords,
 		player: this.id
 	}
 	// tells us the cords and who shoot
@@ -206,18 +205,18 @@ const handleTurns = function(cords, room_id) {
  * handleGameBoards purpose is so we can save both players set boards
  * and send them to both clients for later use
  */
-const handleGameBoard = function(cords, room_id, username) {
+const handleGameBoard = function (cords, room_id, username) {
 
-	// if there is no instance for this room 
+	// if there is no instance for this room
 	// create one and add the first players board
-	if ( !room_boards.find(room => room.id === room_id) ) {
+	if (!room_boards.find(room => room.id === room_id)) {
 		room_boards.push({
 			id: room_id,
 			users: [
 				{
 					id: this.id,
 					name: username,
-					takenCords: cords
+					takenCords: cords,
 				}
 			]
 		})
@@ -243,7 +242,7 @@ const handleGameBoard = function(cords, room_id, username) {
  * Export controller and attach handlers to events
  *
  */
-module.exports = function(socket, _io) {
+module.exports = function (socket, _io) {
 	// save a reference to the socket.io server instance
 	io = _io;
 

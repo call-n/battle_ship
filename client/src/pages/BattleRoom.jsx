@@ -1,108 +1,72 @@
-import { useState, useEffect } from 'react'
-import { useGameContext } from '../contexts/GameContextProvider'
-import { useNavigate, useParams } from 'react-router-dom'
-import Container from 'react-bootstrap/Container'
-import Row from 'react-bootstrap/Row'
-import Col from 'react-bootstrap/Col'
-import GameBoard from '../components/GameBoard'
-import ChatRoom from '../components/ChatRoom'
-import Alert from 'react-bootstrap/Alert'
+import {useEffect, useState} from 'react';
+import {useGameContext} from '../contexts/GameContextProvider';
+import {useNavigate, useParams} from 'react-router-dom';
+import {Alert, Box, Chip, Container, LinearProgress} from "@mui/material";
+import GameBoard from "../components/GameBoard";
+import ChatRoom from "../components/ChatRoom";
 
 const BattleRoom = () => {
-    const [connected, setConnected] = useState(false)
-    const [users, setUsers] = useState([])
-	const [whosTurn, setWhosTurn] = useState(false)
-	const [startGame, setStartGame] = useState(false)
-    const { gameUsername, socket } = useGameContext()
-    const { room_id } = useParams()
-    const navigate = useNavigate()
 
-    const handleUpdateUsers = userlist => {
-		setUsers(userlist)
-	}
+	// CUSTOM HOOKS
+	const {gameUsername, socket} = useGameContext();
 
-    useEffect(() => {
+	// STATES
+	const [users, setUsers] = useState([]);
+	const [whosTurn, setWhosTurn] = useState(false);
+	const [startGame, setStartGame] = useState(false);
+	const [connected, setConnected] = useState(false);
+
+	// ROUTES
+	const {room_id} = useParams();
+	const navigate = useNavigate();
+
+	const handleUpdateUsers = userList => setUsers(userList);
+
+	useEffect(() => {
 		// if no username, redirect them to the login page
-		if (!gameUsername) {
-			navigate('/')
-		}
+		if (!gameUsername) navigate('/');
 
-        // emit join request
-		socket.emit('user:joined', gameUsername, room_id, status => {
-			setConnected(true)
-		})
+		// emit join request
+		socket.emit('user:joined', gameUsername, room_id, status => setConnected(true));
 
-        // listen for updated userlist
-		socket.on('user:list', handleUpdateUsers)
+		// listen for updated userlist
+		socket.on('user:list', handleUpdateUsers);
 
-        return () => {
+		return () => {
 			// stop listening to events
 			socket.off('user:list', handleUpdateUsers)
 
 			// rage-quit
 			socket.emit('user:left', gameUsername, room_id)
 		}
-    }, [socket, gameUsername, room_id, navigate])
+	}, [socket, gameUsername, room_id, navigate]);
 
 	useEffect(() => {
 		// listen for game start
-		socket.emit('game:start', room_id)
+		socket.emit('game:start', room_id);
 
 		socket.on('game:starting', (player) => {
-			player === socket.id 
-			? setWhosTurn(true)
-			: console.log('Other player starts..')
+			player === socket.id ? setWhosTurn(true) : console.log('Other player starts..');
 
-			setStartGame(true)
-		})
+			setStartGame(true);
+		});
 
-	}, [socket, room_id])
+	}, [socket, room_id]);
 
-    // display connecting message
-    if (!connected) {
-        return (
-            <p>Stand by, connecting....</p>
-        )
-    }
+	// display connecting message
+	if (!connected) return <Box sx={{width: '100%'}} children={<LinearProgress/>}/>
+	return <Container>
+		<Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+			<Chip label={Object.values(users).join(' vs ')} color="primary" sx={{bgcolor: 'rgba(26,32,47,0.50)', mb: 5}}/>
+			{startGame ? <>
+				<GameBoard turn={whosTurn} users={users}/>
+				<ChatRoom/>
+			</> : <Alert
+				sx={{bgcolor: 'rgba(26,32,47,0.70)', mb: 5, color: 'white'}}
+				severity="info"
+				children={'Waiting for another player to join...'}/>}
+		</Box>
+	</Container>;
+};
 
-	return (
-		<Container>
-			<Container>
-				<Row>
-					<Col><h1>BattleRoom</h1></Col>
-					<Col xs lg="2">
-					<div className="gamers">
-						<h4>Gamers:</h4>
-						<ul id="online-users">
-							{Object.values(users).map((user, index) =>
-								<li key={index}>{user}</li>
-							)}
-						</ul>
-					</div>
-					</Col>
-				</Row>
-			</Container>
-			{startGame ? (
-				<Container>
-					<GameBoard turn={whosTurn} />
-				</Container>)
-				:( 
-				<Alert variant={'info'}>
-					Waiting for another player to join...
-				</Alert>
-				)}
-			<Container>
-				<Row>
-					<Col>
-						<ChatRoom />
-					</Col>
-					<Col>
-						lol
-					</Col>
-				</Row>
-			</Container>
-		</Container>
-	)
-}
-
-export default BattleRoom
+export default BattleRoom;
