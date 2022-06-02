@@ -5,7 +5,7 @@ import FriendlyCords from './FriendlyCords';
 import EnemyCords from './EnemyCords';
 import {Alert, Box, Button} from "@mui/material";
 
-function GameBoard({turn}) {
+function GameBoard({turn, setWin}) {
 	// * Arr for render game board
 	const gameBoard = [
 		[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -31,13 +31,14 @@ function GameBoard({turn}) {
 	const [selectedBoats, setSelectedBoats] = useState(false);
 	const [choosingCords, setChoosingCords] = useState(false);
 	const [direction, setDirection] = useState(false);
+	const [alertTextError, setAlertTextError] = useState(false);
 	const [alertText, setAlertText] = useState('Choose which ship you want to place');
 	const [enemyBoard, setEnemyBoard] = useState([]);
 	const [friendlyBoard, setFriendlyBoard] = useState([]);
 	const [takenCords, setTakenCords] = useState([]);
 	const [shotCords, setShotCords] = useState([]);
 	const [chosenBoat, setChosenBoat] = useState([]);
-
+	const [score, setScore] = useState(0)
 	// * Ship Data
 	/* eslint    no-unused-vars: 0 */
 	const [boatsToPlace, setBoatsToPlace] = useState([
@@ -72,9 +73,10 @@ function GameBoard({turn}) {
 				urCord.miss = false;
 				urCord.hit = true;
 				setYourTurn(true);
+				setScore(score + 1);
+				(score === 11) ? setWin(true) : setWin(false)
 				return;
 			}
-
 			setYourTurn(true);
 
 			// just to reuse the old array when rendering
@@ -108,8 +110,9 @@ function GameBoard({turn}) {
 			!direction && x > 9 && chosenBoat.size === 2 || direction && y > 9 && chosenBoat.size === 2 ||
 			!direction && x > 8 && chosenBoat.size === 3 || direction && y > 8 && chosenBoat.size === 3) {
 			setAlertText(`Error: ship must be within game board borders`);
+			setAlertTextError(true);
 			return;
-		}
+		} else setAlertTextError(false);
 
 		// * Color cells
 		const colorBoatByCor = (y, x) => setTakenCords(prevState => [...prevState, {y, x}]);
@@ -151,6 +154,7 @@ function GameBoard({turn}) {
 		if (enemyBoard.find(boat => boat.y === cords.y && boat.x === cords.x)) {
 			setAlertText('You hit a ship!');
 			hit = true;
+			setWin(true)
 		} else setAlertText('You missed, lol');
 
 		setShotCords(prevState => [...prevState, {y: y, x: x, hit}]);
@@ -164,7 +168,7 @@ function GameBoard({turn}) {
 	return (<>
 		{/*Game Info*/}
 		<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', mb: 5, color: 'white', zIndex: '999999'}}
-		       severity="info"
+		       severity={!alertTextError ? 'info' : "error"}
 		       children={alertText}/>
 
 		{/*Buttons* for prep phase*/}
@@ -182,7 +186,6 @@ function GameBoard({turn}) {
 				onClick={() => handleBoatChoice(boat)}
 				children={`Boat size: ${boat.size}`}/>)}
 		</Box>}
-
 
 		{/* Game board Grid*/}
 		<Box sx={{display: 'flex'}}>
@@ -207,7 +210,7 @@ function GameBoard({turn}) {
 					y={index + 1}
 					x={x}
 					enemyBoard={enemyBoard}
-					disabled={!selectedBoats ? true : false}
+					disabled={!selectedBoats}
 					handleChoise={handleShoot}
 					yourTurn={yourTurn}
 					children={x}/>)}

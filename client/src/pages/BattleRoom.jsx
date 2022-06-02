@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react';
 import {useGameContext} from '../contexts/GameContextProvider';
 import {useNavigate, useParams} from 'react-router-dom';
-import {Alert, Box, Chip, Container, LinearProgress} from "@mui/material";
+import {Alert, Box, Container, LinearProgress} from "@mui/material";
 import GameBoard from "../components/GameBoard";
 import ChatRoom from "../components/ChatRoom";
 
@@ -15,7 +15,7 @@ const BattleRoom = () => {
 	const [whosTurn, setWhosTurn] = useState(false);
 	const [startGame, setStartGame] = useState(false);
 	const [connected, setConnected] = useState(false);
-
+	const [win, setWin] = useState(false);
 	// ROUTES
 	const {room_id} = useParams();
 	const navigate = useNavigate();
@@ -47,7 +47,7 @@ const BattleRoom = () => {
 
 		socket.on('game:starting', (player) => {
 			player === socket.id ? setWhosTurn(true) : console.log('Other player starts..');
-
+			setWin(false);
 			setStartGame(true);
 		});
 
@@ -55,18 +55,18 @@ const BattleRoom = () => {
 
 	// display connecting message
 	if (!connected) return <Box sx={{width: '100%'}} children={<LinearProgress/>}/>
-	return <Container>
-		<Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-			<Chip label={Object.values(users).join(' vs ')} color="primary" sx={{bgcolor: 'rgba(26,32,47,0.50)', mb: 5}}/>
-			{startGame ? <>
-				<GameBoard turn={whosTurn} users={users}/>
-				<ChatRoom/>
-			</> : <Alert
-				sx={{bgcolor: 'rgba(26,32,47,0.70)', mb: 5, color: 'white'}}
-				severity="info"
-				children={'Waiting for another player to join...'}/>}
-		</Box>
-	</Container>;
+
+	return (win === false)
+		? (<Container>
+			<Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+				{startGame ? <><GameBoard turn={whosTurn} setWin={setWin}/><ChatRoom/></> :
+					<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', mb: 5, color: 'white'}} severity="info"
+					       children={'Waiting for another player to join...'}/>}
+			</Box>
+		</Container>)
+		: (<Container
+			children={<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', m: '500px auto', color: 'white', maxWidth: 300}}
+			                 children={`Winner is |||| Battle Room - line 69`}/>}/>)
 };
 
 export default BattleRoom;
