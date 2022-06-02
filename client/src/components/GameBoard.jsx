@@ -73,8 +73,8 @@ function GameBoard({turn, setWin}) {
 				urCord.miss = false;
 				urCord.hit = true;
 				setYourTurn(true);
-				setScore(score + 1);
-				(score === 11) ? setWin(true) : setWin(false)
+				/*setScore(score + 1);
+				(score === 11) ? setWin(true) : setWin(false)*/
 				return;
 			}
 			setYourTurn(true);
