@@ -23,7 +23,7 @@ const rooms = [
 	},
 ];
 
-const room_boards = []
+var room_boards = []
 
 /**
  * Get room by ID
@@ -122,6 +122,9 @@ const handleDisconnect = function() {
 	// b) remove socket from room's `users` object
 	delete room.users[this.id];
 
+	// removes the game instance and clears boards
+	room_boards = room_boards.filter(board => board.id === room.name)
+
 	// let everyone know that someone left the room
 	this.broadcast.to(room.id).emit('user:left', username);
 
@@ -135,6 +138,8 @@ const handleGetRoomList = function(callback) {
 	// generate a list of rooms with only their id and name
 	const room_list = rooms.map(room => {
 
+		// the joinable parameter is used in the lobby so I know 
+		// when a new user can join the room
 		Object.keys(room.users).length >= 2 
 		? joinable = false 
 		: joinable = true
@@ -170,18 +175,25 @@ const handleGetRoomList = function(callback) {
  */
 const handleGameStart = function(room_id) {
 
+	// get room
 	const room = getRoomById(room_id);
 
+	// checks if there is two users in the room
 	if (Object.keys(room.users).length !== 2) {
 		return;
 	}
 
-	// return player who starts
+	// when both players has connected return player who starts
 	io.to(room_id).emit('game:starting', this.id);
 }
 
+/**
+ * Handles the turns, just like the message for the chat
+ * 
+ */
 const handleTurns = function(cords, room_id) {
 
+	// what we want to give back to the client
 	const payload = {
 		cords: cords, 
 		player: this.id
@@ -190,8 +202,14 @@ const handleTurns = function(cords, room_id) {
 	io.to(room_id).emit('game:turnresult', payload);
 }
 
+/**
+ * handleGameBoards purpose is so we can save both players set boards
+ * and send them to both clients for later use
+ */
 const handleGameBoard = function(cords, room_id, username) {
 
+	// if there is no instance for this room 
+	// create one and add the first players board
 	if ( !room_boards.find(room => room.id === room_id) ) {
 		room_boards.push({
 			id: room_id,
@@ -206,16 +224,18 @@ const handleGameBoard = function(cords, room_id, username) {
 		return
 	}
 
+	// find the room we created earlier
 	const room = room_boards.find(room => room.id === room_id)
 
+	// set the other player's board
 	room.users.push({
 		id: this.id,
 		name: username,
 		takenCords: cords
 	})
 
-	console.log(room.users)
-
+	console.log(room)
+	// tell the client we have both boards
 	io.to(room_id).emit('game:boardsfinito', room);
 }
 
