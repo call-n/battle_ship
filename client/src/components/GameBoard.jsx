@@ -154,7 +154,7 @@ function GameBoard({turn, setWin}) {
 		if (enemyBoard.find(boat => boat.y === cords.y && boat.x === cords.x)) {
 			setAlertText('You hit a ship!');
 			hit = true;
-			setWin(true)
+			/*setWin(true)*/
 		} else setAlertText('You missed, lol');
 
 		setShotCords(prevState => [...prevState, {y: y, x: x, hit}]);
