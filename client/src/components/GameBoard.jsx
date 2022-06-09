@@ -61,6 +61,12 @@ function GameBoard({turn, setWin}) {
 
 	// * useEffect for handling turn result from server
 	useEffect(() => {
+		socket.on('game:clientending', inSocket => {
+			// the socket that returns is the loser, display.
+			inSocket === socket ? console.log('lol, u lost') : console.log('U won')
+			console.log(socket)
+		})
+
 		socket.on('game:turnresult', (payload) => {
 			// check who sent the shoot
 			if (payload.player === socket.id) return;
@@ -73,8 +79,12 @@ function GameBoard({turn, setWin}) {
 				urCord.miss = false;
 				urCord.hit = true;
 				setYourTurn(true);
-				/*setScore(score + 1);
-				(score === 11) ? setWin(true) : setWin(false)*/
+				// this counts 4 times, fixi fixi
+				setScore(prevValue => prevValue + 1)
+				console.log(score)
+				if (score === 11) { 
+					socket.emit('game:over', room_id, socket)
+				}
 				return;
 			}
 			setYourTurn(true);
@@ -82,7 +92,7 @@ function GameBoard({turn, setWin}) {
 			// just to reuse the old array when rendering
 			setTakenCords(prevState => [...prevState, {y: payload.cords.y, x: payload.cords.x, hit: false, miss: true}]);
 		})
-	}, [socket, takenCords]);
+	}, [socket, takenCords, score, room_id]);
 
 	// * The initial that runs first when you are dont with the board and checks if its your turn
 	useEffect(() => {

@@ -239,6 +239,14 @@ const handleGameBoard = function (cords, room_id, username) {
 }
 
 /**
+ * Handling of the end sequence when all cords are hit on one side 
+ */
+const handleGameOver = function (room_id, socket) {
+
+	io.to(room_id).emit('game:clientending', socket);
+}
+
+/**
  * Export controller and attach handlers to events
  *
  */
@@ -271,4 +279,7 @@ module.exports = function (socket, _io) {
 
 	// handle the board of the game
 	socket.on('game:board', handleGameBoard)
+
+	// handle the ending of the game
+	socket.on('game:over', handleGameOver)
 }
