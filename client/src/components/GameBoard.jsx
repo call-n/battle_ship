@@ -38,7 +38,7 @@ function GameBoard({turn, setWin}) {
 	const [takenCords, setTakenCords] = useState([]);
 	const [shotCords, setShotCords] = useState([]);
 	const [chosenBoat, setChosenBoat] = useState([]);
-	const [score, setScore] = useState(0)
+	let scoreCounter = 0;
 	// * Ship Data
 	/* eslint    no-unused-vars: 0 */
 	const [boatsToPlace, setBoatsToPlace] = useState([
@@ -80,9 +80,10 @@ function GameBoard({turn, setWin}) {
 				urCord.hit = true;
 				setYourTurn(true);
 				// this counts 4 times, fixi fixi
-				setScore(prevValue => prevValue + 1)
-				console.log(score)
-				if (score === 11) { 
+				scoreCounter++;
+				if (scoreCounter === 11) {
+					console.log(scoreCounter);
+					console.log(':::::::::you won:::::::::');
 					socket.emit('game:over', room_id, socket)
 				}
 				return;
@@ -92,7 +93,7 @@ function GameBoard({turn, setWin}) {
 			// just to reuse the old array when rendering
 			setTakenCords(prevState => [...prevState, {y: payload.cords.y, x: payload.cords.x, hit: false, miss: true}]);
 		})
-	}, [socket, takenCords, score, room_id]);
+	}, [socket, takenCords, scoreCounter,room_id]);
 
 	// * The initial that runs first when you are dont with the board and checks if its your turn
 	useEffect(() => {
