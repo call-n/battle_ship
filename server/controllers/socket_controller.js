@@ -190,12 +190,13 @@ const handleGameStart = function (room_id) {
  * Handles the turns, just like the message for the chat
  *
  */
-const handleTurns = function (cords, room_id) {
+const handleTurns = function (cords, room_id,username) {
 
 	// what we want to give back to the client
 	const payload = {
 		cords: cords,
-		player: this.id
+		player: this.id,
+		name: username
 	}
 	// tells us the cords and who shoot
 	io.to(room_id).emit('game:turnresult', payload);
@@ -239,12 +240,9 @@ const handleGameBoard = function (cords, room_id, username) {
 }
 
 /**
- * Handling of the end sequence when all cords are hit on one side 
+ * Handling of the end sequence when all cords are hit on one side
  */
-const handleGameOver = function (room_id, socket) {
 
-	io.to(room_id).emit('game:clientending', socket);
-}
 
 /**
  * Export controller and attach handlers to events
@@ -281,5 +279,7 @@ module.exports = function (socket, _io) {
 	socket.on('game:board', handleGameBoard)
 
 	// handle the ending of the game
-	socket.on('game:over', handleGameOver)
+	socket.on('game:over',  (winnerName, condition, room_id) => {
+		io.to(room_id).emit('game:clientending', winnerName, condition, room_boards);
+	})
 }
