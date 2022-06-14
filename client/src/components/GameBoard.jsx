@@ -99,7 +99,7 @@ function GameBoard({turn}) {
 		});
 	}, [socket, yourTurn]);
 
-	useEffect(() => {if (score === 3) {socket.emit('game:over', state ,true, room_id, score)}}, [score, socket, gameUsername, room_id])
+	useEffect(() => {if (score === 11) {socket.emit('game:over', state ,true, room_id, score)}}, [score, socket, gameUsername, room_id])
 
 	///////FUNCTIONS///////
 	// * Logic behind how ships are placed
