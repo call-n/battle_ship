@@ -5,7 +5,7 @@ import FriendlyCords from './FriendlyCords';
 import EnemyCords from './EnemyCords';
 import {Alert, Box, Button} from "@mui/material";
 
-function GameBoard({turn, setWin}) {
+function GameBoard({turn}) {
 	// * Arr for render game board
 	const gameBoard = [
 		[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -38,7 +38,8 @@ function GameBoard({turn, setWin}) {
 	const [takenCords, setTakenCords] = useState([]);
 	const [shotCords, setShotCords] = useState([]);
 	const [chosenBoat, setChosenBoat] = useState([]);
-	const [score, setScore] = useState(0)
+	const [score, setScore] = useState(0);
+	const [state, setState] = useState('');
 	// * Ship Data
 	/* eslint    no-unused-vars: 0 */
 	const [boatsToPlace, setBoatsToPlace] = useState([
@@ -61,30 +62,18 @@ function GameBoard({turn, setWin}) {
 
 	// * useEffect for handling turn result from server
 	useEffect(() => {
-		socket.on('game:clientending', inSocket => {
-			// the socket that returns is the loser, display.
-			inSocket === socket ? console.log('lol, u lost') : console.log('U won')
-			console.log(socket)
-		})
 
 		socket.on('game:turnresult', (payload) => {
 			// check who sent the shoot
 			if (payload.player === socket.id) return;
-
 			setAlertText('bruh, its ur turn');
-
 			const urCord = takenCords.find(boat => boat.y === payload.cords.y && boat.x === payload.cords.x);
-
 			if (urCord) {
 				urCord.miss = false;
 				urCord.hit = true;
 				setYourTurn(true);
-				// this counts 4 times, fixi fixi
-				setScore(prevValue => prevValue + 1)
-				console.log(score)
-				if (score === 11) { 
-					socket.emit('game:over', room_id, socket)
-				}
+				setScore( score + 1);
+				setState(payload.name);
 				return;
 			}
 			setYourTurn(true);
@@ -109,6 +98,8 @@ function GameBoard({turn, setWin}) {
 			setSelectedBoats(true)
 		});
 	}, [socket, yourTurn]);
+
+	useEffect(() => {if (score === 3) {socket.emit('game:over', state ,true, room_id, score)}}, [score, socket, gameUsername, room_id])
 
 	///////FUNCTIONS///////
 	// * Logic behind how ships are placed
@@ -158,20 +149,17 @@ function GameBoard({turn, setWin}) {
 		let hit = false;
 		const cords = {y: y, x: x};
 
-		console.log(enemyBoard.find(boat => boat.y === y && boat.x === x), y, x);
-
 		// check if the cords are in the enemy board
 		if (enemyBoard.find(boat => boat.y === cords.y && boat.x === cords.x)) {
 			setAlertText('You hit a ship!');
 			hit = true;
-			/*setWin(true)*/
 		} else setAlertText('You missed, lol');
 
 		setShotCords(prevState => [...prevState, {y: y, x: x, hit}]);
 		setYourTurn(false);
 
 		// * Parse coordinates data to server after shooting
-		socket.emit('game:nextturn', cords, room_id);
+		socket.emit('game:nextturn', cords, room_id, gameUsername);
 	};
 
 	///////RENDER HTML///////

@@ -15,7 +15,8 @@ const BattleRoom = () => {
 	const [whosTurn, setWhosTurn] = useState(false);
 	const [startGame, setStartGame] = useState(false);
 	const [connected, setConnected] = useState(false);
-	const [win, setWin] = useState(false);
+	const [gameOver, setGameOver] = useState(false);
+	const [winnerName, setWinnerName] = useState('state');
 	// ROUTES
 	const {room_id} = useParams();
 	const navigate = useNavigate();
@@ -47,26 +48,38 @@ const BattleRoom = () => {
 
 		socket.on('game:starting', (player) => {
 			player === socket.id ? setWhosTurn(true) : console.log('Other player starts..');
-			setWin(false);
+			setGameOver(false);
 			setStartGame(true);
 		});
 
+
 	}, [socket, room_id]);
+
+	socket.on('game:clientending', (userName, winCondition, room_boards) => {
+	/*	room_boards.map(({users}) => users.map(({name, id}) => {
+				if (id === socket.id) {
+					setWinnerName(name)
+				}
+			})
+		)*/
+		setWinnerName(userName);
+		winCondition ? setGameOver(true) : setGameOver(false);
+	})
 
 	// display connecting message
 	if (!connected) return <Box sx={{width: '100%'}} children={<LinearProgress/>}/>
 
-	return (win === false)
+	return (gameOver === false)
 		? (<Container>
 			<Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-				{startGame ? <><GameBoard turn={whosTurn} setWin={setWin}/><ChatRoom/></> :
+				{startGame ? <><GameBoard turn={whosTurn}/><ChatRoom/></> :
 					<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', mb: 5, color: 'white'}} severity="info"
 					       children={'Waiting for another player to join...'}/>}
 			</Box>
 		</Container>)
 		: (<Container
 			children={<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', m: '500px auto', color: 'white', maxWidth: 300}}
-			                 children={`Winner is |||| Battle Room - line 69`}/>}/>)
+			                 children={`Winner: ${winnerName}`}/>}/>)
 };
 
 export default BattleRoom;
