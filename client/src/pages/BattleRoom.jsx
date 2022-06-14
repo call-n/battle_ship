@@ -4,6 +4,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {Alert, Box, Container, LinearProgress} from "@mui/material";
 import GameBoard from "../components/GameBoard";
 import ChatRoom from "../components/ChatRoom";
+import Button from 'react-bootstrap/Button'
 
 const BattleRoom = () => {
 
@@ -22,6 +23,11 @@ const BattleRoom = () => {
 	const navigate = useNavigate();
 
 	const handleUpdateUsers = userList => setUsers(userList);
+
+	const newGame = () => {
+	  // gå tillbaka till startsidan
+	  navigate("/");
+	};
 
 	useEffect(() => {
 		// if no username, redirect them to the login page
@@ -77,9 +83,18 @@ const BattleRoom = () => {
 					       children={'Waiting for another player to join...'}/>}
 			</Box>
 		</Container>)
-		: (<Container
-			children={<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', m: '500px auto', color: 'white', maxWidth: 300}}
-			                 children={`Winner: ${winnerName}`}/>}/>)
-};
+		: (<Container >
+			<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', m: '50px auto', color: 'white', maxWidth: 300}}
+				children={`Winner: ${winnerName}`}
+			/>
+			<div className="d-flex justify-content-center">
+				<Button  onClick={newGame}> 
+					Play again?
+				</Button>
+			</div>
+			
+	  </Container>
+							 
+		)};
 
 export default BattleRoom;
