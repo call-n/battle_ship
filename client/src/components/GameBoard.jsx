@@ -40,6 +40,11 @@ function GameBoard({turn}) {
 	const [chosenBoat, setChosenBoat] = useState([]);
 	const [score, setScore] = useState(0);
 	const [state, setState] = useState('');
+	const [sunkedShip, setSunkedShip] = useState(0);
+	const [battleship, setBattleship] = useState(2);
+	const [destroyer, setDestroyer] = useState(1);
+	const [patrolBoat, setPatrolBoat] = useState(0);
+	const [textMe, setTextMe] = useState(4);
 	// * Ship Data
 	/* eslint    no-unused-vars: 0 */
 	const [boatsToPlace, setBoatsToPlace] = useState([
@@ -48,6 +53,7 @@ function GameBoard({turn}) {
 		{id: 'boat3', size: 3, placed: false},
 		{id: 'boat4', size: 4, placed: false}
 	]);
+
 
 	///////EFFECTS///////
 	// * if this is added in the other useEffect it becomes a ∞loop
@@ -59,6 +65,7 @@ function GameBoard({turn}) {
 			socket.emit('game:board', takenCords, room_id, gameUsername);
 		}
 	}, [socket, takenCords, room_id, gameUsername, friendlyBoard]);
+
 
 	// * useEffect for handling turn result from server
 	useEffect(() => {
@@ -72,14 +79,16 @@ function GameBoard({turn}) {
 				urCord.miss = false;
 				urCord.hit = true;
 				setYourTurn(true);
-				setScore( score + 1);
+				setScore(score + 1);
 				setState(payload.name);
+
 				return;
 			}
 			setYourTurn(true);
 
 			// just to reuse the old array when rendering
-			setTakenCords(prevState => [...prevState, {y: payload.cords.y, x: payload.cords.x, hit: false, miss: true}]);
+			setTakenCords(prevState => [...prevState, {y: payload.cords.y, x: payload.cords.x, hit: false, miss: true, ship: payload.ship}]);
+
 		})
 	}, [socket, takenCords, score, room_id]);
 
@@ -101,8 +110,10 @@ function GameBoard({turn}) {
 
 	useEffect(() => {
 		if (score === 11) {
-			socket.emit('game:over', state ,true, room_id, score)
-		}}, [score, socket, gameUsername, room_id, state])
+			socket.emit('game:over', state, true, room_id, score)
+		}
+	}, [score, socket, gameUsername, room_id, state])
+
 
 	///////FUNCTIONS///////
 	// * Logic behind how ships are placed
@@ -119,7 +130,7 @@ function GameBoard({turn}) {
 		} else setAlertTextError(false);
 
 		// * Color cells
-		const colorBoatByCor = (y, x) => setTakenCords(prevState => [...prevState, {y, x}]);
+		const colorBoatByCor = (y, x) => setTakenCords(prevState => [...prevState, {y, x, ship: chosenBoat.size}]);
 
 		// * Rendering
 		const renderBoat = () => {
@@ -146,16 +157,45 @@ function GameBoard({turn}) {
 		setChosenBoat(boat);
 	};
 
+	const sunkedChecker = () => {
+		console.log(sunkedShip);
+		console.log('||||||||')
+		switch (sunkedShip) {
+			case 4:
+				setBattleship(() => battleship - 1);
+				console.log(battleship);
+				if (battleship === 0) setTextMe(textMe - 1);
+				break;
+
+			case 3:
+				setDestroyer(() => destroyer - 1);
+				console.log(destroyer);
+				if (destroyer === 0) setTextMe(textMe - 1);
+				break;
+			case 2:
+				setPatrolBoat(() => patrolBoat - 1);
+				console.log(patrolBoat);
+				if (patrolBoat === 0) setTextMe(textMe - 1);
+				if (patrolBoat === -2) setTextMe(textMe - 1);
+				break
+			default:
+				break;
+		}
+	}
+
 	// * Color Opponents Cell on click
 	const handleShoot = (y, x) => {
 
 		let hit = false;
 		const cords = {y: y, x: x};
-
+		const ship = enemyBoard.find(boat => boat.y === cords.y && boat.x === cords.x);
 		// check if the cords are in the enemy board
 		if (enemyBoard.find(boat => boat.y === cords.y && boat.x === cords.x)) {
 			setAlertText('You hit a ship!');
 			hit = true;
+			console.log(enemyBoard.find(boat => boat.y === cords.y && boat.x === cords.x))
+			setSunkedShip(ship.ship);
+			sunkedChecker();
 		} else setAlertText('You missed, lol');
 
 		setShotCords(prevState => [...prevState, {y: y, x: x, hit}]);
@@ -171,7 +211,8 @@ function GameBoard({turn}) {
 		<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', mb: 5, color: 'white', zIndex: '999999'}}
 		       severity={!alertTextError ? 'info' : "error"}
 		       children={alertText}/>
-
+		<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', mb: 5, color: 'white', zIndex: '999999'}}
+		       children={`Ships left ${textMe}`}/>
 		{/*Buttons* for prep phase*/}
 		{!selectedBoats && <Box sx={{display: 'flex'}}>
 			<Button

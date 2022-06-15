@@ -9,10 +9,10 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
 const root = ReactDOM.createRoot(document.getElementById('app'))
-root.render(<React.StrictMode>
+root.render(
 	<BrowserRouter>
 		<GameContextProvider>
 			<App/>
 		</GameContextProvider>
 	</BrowserRouter>
-</React.StrictMode>);
+);
