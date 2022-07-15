@@ -33,6 +33,7 @@ function GameBoard({turn}) {
 	const [direction, setDirection] = useState(false);
 	const [alertTextError, setAlertTextError] = useState(false);
 	const [alertText, setAlertText] = useState('Choose which ship you want to place');
+	const [alertTextBattle,setAlertTextBattle] = useState('')
 	const [enemyBoard, setEnemyBoard] = useState([]);
 	const [friendlyBoard, setFriendlyBoard] = useState([]);
 	const [takenCords, setTakenCords] = useState([]);
@@ -69,11 +70,10 @@ function GameBoard({turn}) {
 
 	// * useEffect for handling turn result from server
 	useEffect(() => {
-
 		socket.on('game:turnresult', (payload) => {
 			// check who sent the shoot
 			if (payload.player === socket.id) return;
-			setAlertText('bruh, its ur turn');
+			setAlertTextBattle('bruh, its ur turn');
 			const urCord = takenCords.find(boat => boat.y === payload.cords.y && boat.x === payload.cords.x);
 			if (urCord) {
 				urCord.miss = false;
@@ -95,7 +95,8 @@ function GameBoard({turn}) {
 	// * The initial that runs first when you are dont with the board and checks if its your turn
 	useEffect(() => {
 		// Checks if server gave you the first shoot
-		if (yourTurn) setAlertText('bruh, its ur turn');
+		setAlertTextBattle('waiting for other player');
+		if (yourTurn) setAlertTextBattle('bruh, its ur turn');
 
 		// listens for the server to respond with the final cords for both boards
 		/* eslint    array-callback-return: 0 */
@@ -191,12 +192,12 @@ function GameBoard({turn}) {
 		const ship = enemyBoard.find(boat => boat.y === cords.y && boat.x === cords.x);
 		// check if the cords are in the enemy board
 		if (enemyBoard.find(boat => boat.y === cords.y && boat.x === cords.x)) {
-			setAlertText('You hit a ship!');
+			setAlertTextBattle('You hit a ship!');
 			hit = true;
 			console.log(enemyBoard.find(boat => boat.y === cords.y && boat.x === cords.x))
 			setSunkedShip(ship.ship);
 			sunkedChecker();
-		} else setAlertText('You missed, lol');
+		} else setAlertTextBattle('You missed, lol');
 
 		setShotCords(prevState => [...prevState, {y: y, x: x, hit}]);
 		setYourTurn(false);
@@ -208,9 +209,12 @@ function GameBoard({turn}) {
 	///////RENDER HTML///////
 	return (<>
 		{/*Game Info*/}
-		<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', mb: 5, color: 'white', zIndex: '999999'}}
+		{!selectedBoats &&	<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', mb: 5, color: 'white', zIndex: '999999'}}
 		       severity={!alertTextError ? 'info' : "error"}
-		       children={alertText}/>
+		       children={alertText}/> }
+		{selectedBoats && <Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', mb: 5, color: 'white', zIndex: '999999'}}
+		                         severity={!alertTextError ? 'info' : "error"}
+		                         children={alertTextBattle}/>}
 		<Alert sx={{bgcolor: 'rgba(26,32,47,0.70)', mb: 5, color: 'white', zIndex: '999999'}}
 		       children={`Ships left ${textMe}`}/>
 		{/*Buttons* for prep phase*/}
